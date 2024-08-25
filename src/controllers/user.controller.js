@@ -210,9 +210,9 @@ const getCurrentUser = asyncHandler(async(req, res)=>{
   return res
   .status(200)
   .json(
-    200,
+   new ApiResponse( 200,
     req.user,
-    "User fetched successfully"
+    "User fetched successfully")
   )
 })
 
@@ -244,12 +244,12 @@ const updateUserAvatar = asyncHandler(async(req, res)=>{
   }
   const avatar = await uploadOnCloudinary(avatarLocalPath)
   if(!avatar.url){
+    console.log(avatar)
     throw new ApiError(500,"Error while uploading avatar");
   }
 const oldURL =req.user?.avatar
 const publicId = oldURL.split("/").pop().replace(".jpg", "")
-const deleted = await deleteImageFromCloudinary(publicId)
-console.log(deleted)
+await deleteImageFromCloudinary(publicId)
   const user = await User.findByIdAndUpdate(req.user?._id, {
     $set:{
       avatar: avatar.url,
@@ -277,6 +277,9 @@ const updateUserCoverImage = asyncHandler(async(req, res)=>{
   if(!coverImage.url){
     throw new ApiError(500,"Error while uploading Cover Image");
   }
+const oldURL =req.user?.coverImage
+const publicId = oldURL.split("/").pop().replace(".jpg", "")
+await deleteImageFromCloudinary(publicId)
   const user = await User.findByIdAndUpdate(req.user?._id, {
     $set:{
       coverImage: coverImage.url,
@@ -412,7 +415,7 @@ const getWatchHistory = asyncHandler(async(req, res)=>{
   return res
   .status(200)
   .json(
-    new ApiResponse(200, user[0].watchHistory, "User watch history fetched successfully" )
+    new ApiResponse(200, user[0].watchHistory, "User watch history ftched successfully" )
   )
 })
 

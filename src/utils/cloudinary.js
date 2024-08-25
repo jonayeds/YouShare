@@ -25,18 +25,20 @@ const uploadOnCloudinary = async(localFilePath) =>{
 }
 
 const deleteImageFromCloudinary  = async(publicId)=>{
-    try {
         if(!publicId) return null
-        const response = await cloudinary.uploader.destroy(publicId, {
-            resource_type:"auto",
-            invalidate:true
+        await cloudinary.api.delete_resources([publicId], {
+            type:"upload",
+            resource_type:"image",
         })
-        return response
-
-    } catch (error) {
-        return "error while deleting old avatar"
+        .then(() => {
+            console.log("deleted old file successfully")
+            return 
+        }).catch(() => {
+            console.log("not deleted")
+             return 
+        });
         
-    }
+        
 }
 
 export {uploadOnCloudinary, deleteImageFromCloudinary}
