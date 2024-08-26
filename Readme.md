@@ -1,3 +1,3 @@
 # YouShare
 
---A video sharing platform (Development Ongoing)
+--Backend for A video sharing platform (Development Ongoing)
