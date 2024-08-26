@@ -41,7 +41,8 @@ const publishAVideo  = asyncHandler(async(req, res)=>{
         description,
         videoFile: video.url,
         thumbnail: thumbnail.url,
-        duration:video.duration
+        duration:video.duration,
+        owner: req.user._id
     })
 
     const createdVideo = await Video.findById(createVideo._id)
