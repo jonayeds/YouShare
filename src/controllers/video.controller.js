@@ -1,6 +1,6 @@
 import { ApiError } from "../utils/apiError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { uploadOnCloudinary } from "../utils/cloudinary.js";
+import { deleteImageFromCloudinary, uploadOnCloudinary } from "../utils/cloudinary.js";
 
 import {Video} from "../models/video.model.js"
 import { ApiResponse } from "../utils/apiResponse.js";
@@ -58,4 +58,58 @@ const publishAVideo  = asyncHandler(async(req, res)=>{
 
 })
 
-export {getAllVideos, publishAVideo}
+const getVideoById = asyncHandler(async(req, res)=>{
+    const {videoId} = req.params
+    const video = await Video.findById(videoId)
+    if(!video){
+        throw new ApiError(400, "invalid video Id")
+    }
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(200, video, "Video fetched successfully")
+    )
+
+})
+
+const updateVideo = asyncHandler(async(req,res)=>{
+    const {videoId} = req.params
+    const {title, description} = req.body
+
+    const thumbnailLocalFilePath = req.file?.path
+    const video = await Video.findById(videoId)
+    if(video.owner.toString() !== req.user._id.toString()){
+        console.log(req.user._id)
+        console.log(video.owner)
+        console.log(video.owner === req.user._id)
+        throw new ApiError(400, "User is Unauthorized to update video")
+    }
+    let newThumbnail, oldThumbnail; 
+    if(thumbnailLocalFilePath){
+        newThumbnail =  await uploadOnCloudinary(thumbnailLocalFilePath)
+        if(!newThumbnail?.url){
+            throw new ApiError(500,"Error while uploading thumbnail to cloudinary")
+        }
+        await deleteImageFromCloudinary(video.thumbnail.split("/").pop().replace(".jpg", ""))
+    }else{
+       oldThumbnail = video.thumbnail
+    }
+   
+    const newVideo =  await Video.findByIdAndUpdate(videoId, {
+        $set:{
+            thumbnail: newThumbnail?.url || oldThumbnail,
+            title:title,
+            description
+        },
+    }, 
+    {new:true})
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(200, newVideo, "Video updated successfully")
+    )
+
+    
+})
+
+export {getAllVideos, publishAVideo, getVideoById, updateVideo}
