@@ -1,6 +1,6 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
 import {Subscription} from "../models/subscription.model.js"
-import mongoose from "mongoose";
+import mongoose, { isValidObjectId } from "mongoose";
 import { ApiResponse } from "../utils/apiResponse.js";
 import { User } from "../models/user.model.js";
 import { ApiError } from "../utils/apiError.js";
@@ -39,4 +39,41 @@ const toggleSubscription = asyncHandler(async(req, res)=>{
     )
 })
 
-export {toggleSubscription}
+const getUserChannelSubscribers = asyncHandler(async(req, res)=>{
+    const { channelId } = req.params
+    if(!isValidObjectId(channelId)){
+        throw new ApiError(404, "Invalid Channel id")
+    }
+    const subscribers = await User.aggregate([
+        {
+            $match:{
+                _id : new mongoose.Types.ObjectId(channelId)
+            }
+        },
+        {
+            $lookup:{
+                from:"subscriptions",
+                localField:"_id",
+                foreignField:"channel",
+                as:"subscribers"
+            }
+        },
+        {
+            $project:{
+                subscribers:1,
+                _id:0
+            }
+        }
+    ])
+    if(!subscribers[0]?.subscribers){
+        throw new ApiError(404, "Channel not found")
+    }
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(200, subscribers[0], "fetched subscribers successfully")
+    )
+
+})
+
+export {toggleSubscription, getUserChannelSubscribers}
