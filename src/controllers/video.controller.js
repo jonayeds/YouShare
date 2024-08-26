@@ -1,6 +1,6 @@
 import { ApiError } from "../utils/apiError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { deleteImageFromCloudinary, uploadOnCloudinary } from "../utils/cloudinary.js";
+import { deleteImageFromCloudinary, uploadOnCloudinary, deleteVideoFromCloudinary } from "../utils/cloudinary.js";
 
 import {Video} from "../models/video.model.js"
 import { ApiResponse } from "../utils/apiResponse.js";
@@ -112,4 +112,24 @@ const updateVideo = asyncHandler(async(req,res)=>{
     
 })
 
-export {getAllVideos, publishAVideo, getVideoById, updateVideo}
+const deleteVideo = asyncHandler(async(req, res)=>{
+    const {videoId} = req.params
+    const video = await Video.findById(videoId)
+    if(!video){
+        throw new ApiError(404, "Invalid video id")
+    }
+    if(video.owner.toString() !== req.user._id.toString()){
+        console.log(video.owner.toString())
+        console.log(req.user._id.toString())
+        throw new ApiError(400, "User is not Authorized to Delete the video")
+    } 
+    await deleteVideoFromCloudinary(video.videoFile.split("/").pop().replace(".mp4", ""))
+    await Video.findByIdAndDelete(videoId)
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(200, {}, "Video Deleted successfully")
+    )
+})
+
+export {getAllVideos, publishAVideo, getVideoById, updateVideo, deleteVideo}

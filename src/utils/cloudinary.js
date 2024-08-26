@@ -36,9 +36,23 @@ const deleteImageFromCloudinary  = async(publicId)=>{
         }).catch(() => {
             console.log("not deleted")
              return 
-        });
-        
-        
+        });      
 }
 
-export {uploadOnCloudinary, deleteImageFromCloudinary}
+const deleteVideoFromCloudinary  = async(publicId)=>{
+        if(!publicId) return null
+        await cloudinary.api.delete_resources([publicId], {
+            type:"upload",
+            resource_type:"video",
+        })
+        .then(() => {
+            console.log("deleted old file successfully")
+            return 
+        }).catch(() => {
+            console.log("not deleted")
+             return 
+        });      
+}
+
+
+export {uploadOnCloudinary, deleteImageFromCloudinary, deleteVideoFromCloudinary}
