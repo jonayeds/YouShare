@@ -48,7 +48,9 @@ const updateTweet = asyncHandler(async(req, res)=>{
         throw new ApiError(400, "Invalid tweet Id")
     }
     const newTweet = await Tweet.findByIdAndUpdate(tweetId, {
-        content
+        $set:{
+            content
+        }
     })
     if(!newTweet){
         throw new ApiError(404, "Tweet not found")
