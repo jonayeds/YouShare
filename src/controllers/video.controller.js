@@ -79,9 +79,6 @@ const updateVideo = asyncHandler(async(req,res)=>{
     const thumbnailLocalFilePath = req.file?.path
     const video = await Video.findById(videoId)
     if(video.owner.toString() !== req.user._id.toString()){
-        console.log(req.user._id)
-        console.log(video.owner)
-        console.log(video.owner === req.user._id)
         throw new ApiError(400, "User is Unauthorized to update video")
     }
     let newThumbnail, oldThumbnail; 
