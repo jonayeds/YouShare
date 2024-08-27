@@ -47,7 +47,7 @@ const getUserChannelSubscribers = asyncHandler(async(req, res)=>{
     const subscribers = await User.aggregate([
         {
             $match:{
-                _id : new mongoose.Types.ObjectId(channelId)
+                _id: new mongoose.Types.ObjectId(channelId)
             }
         },
         {
@@ -55,17 +55,46 @@ const getUserChannelSubscribers = asyncHandler(async(req, res)=>{
                 from:"subscriptions",
                 localField:"_id",
                 foreignField:"channel",
-                as:"subscribers"
+                as:"subscriberAccounts",
+                pipeline:[
+                    {
+                        $lookup:{
+                            from:"users",
+                            localField:"subscriber",
+                            foreignField:"_id",
+                            as:"subscriber",
+                            pipeline:[
+                                {
+                                    $project:{
+                                        username:1,
+                                        _id:0,
+                                        fullName:1,
+                                        avatar:1,
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        $project:{
+                            _id:0,
+                            updatedAt:1,
+                            subscriber:1
+                        }
+                    }
+                   
+                ]
             }
         },
         {
             $project:{
-                subscribers:1,
+                subscriberAccounts: 1,
                 _id:0
             }
         }
     ])
-    if(!subscribers[0]?.subscribers){
+    if(!subscribers[0]){
+        console.log(subscribers)
         throw new ApiError(404, "Channel not found")
     }
     return res
@@ -76,4 +105,68 @@ const getUserChannelSubscribers = asyncHandler(async(req, res)=>{
 
 })
 
-export {toggleSubscription, getUserChannelSubscribers}
+const getSubscribedChannel = asyncHandler(async(req, res)=>{
+    const {subscriberId} = req.params
+    if(!isValidObjectId(subscriberId)){
+        throw new ApiError(400, "Invalid Channel Id")
+    }
+    const subscribedTo = await User.aggregate([
+        {
+            $match:{
+                _id: new mongoose.Types.ObjectId(subscriberId)
+            }
+        },
+        {
+            $lookup:{
+                from:"subscriptions",
+                localField:"_id",
+                foreignField:"subscriber",
+                as:"subscribedChannels",
+                pipeline:[
+                    {
+                        $lookup:{
+                            from:"users",
+                            localField:"channel",
+                            foreignField:"_id",
+                            as:"channel",
+                            pipeline:[
+                                {
+                                    $project:{
+                                        username:1,
+                                        _id:0,
+                                        fullName:1,
+                                        avatar:1,
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        $project:{
+                            _id:0,
+                            updatedAt:1,
+                            channel:1
+                        }
+                    }
+                   
+                ]
+            }
+        },
+        {
+            $project:{
+                subscribedChannels: 1,
+                _id:0
+            }
+        }
+    ])
+    if(!subscribedTo[0]){
+        throw new ApiError(404, "Channel not found")
+    }
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(200, subscribedTo[0], "successfully fetched Subscribed channels")
+    )
+})
+
+export {toggleSubscription, getUserChannelSubscribers, getSubscribedChannel}
