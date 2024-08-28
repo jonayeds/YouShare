@@ -1,4 +1,3 @@
-import { Comment } from "../models/Comment.model.js";
 import { Video } from "../models/video.model.js";
 import { ApiError } from "../utils/apiError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
@@ -164,6 +163,45 @@ const updatePlaylist = asyncHandler(async(req, res)=>{
     )
 })
 
+const deletePlaylist = asyncHandler(async(req, res)=>{
+    const {playlistId} = req.params
+    if(!isValidObjectId(playlistId)){
+        throw new ApiError(400, "Invalid playlist Id")
+    }
+    const playlist = await Playlist.findById(playlistId)
+    if(playlist?.owner.toString() !== req.user._id.toString()){
+        throw new ApiError(401, "User not Authorized to delete Playlist")
+    }
+    await Playlist.findByIdAndDelete(playlistId)
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(200, {}, "Successfully deleted Playlist")
+    )
+})
+
+const removeVideoFromPlaylist = asyncHandler(async(req, res)=>{
+    const {videoId, playlistId} = req.params
+    if(!(isValidObjectId(videoId) && isValidObjectId(playlistId))){
+        throw new ApiError(400, "Invalid video or playlist Id")
+    }
+    const playlist = await Playlist.findById(playlistId)
+    if(playlist?.owner.toString() !== req.user._id.toString() ){
+        throw new ApiError(401, "user not Authorized to delete Video from playlist ")
+    }
+    const updatedPlaylist = await Playlist.findByIdAndUpdate(playlistId, {
+        $pull:{
+            videos: videoId
+        }
+    })
+    updatedPlaylist.videos = (updatePlaylist?.videos?.filter(video => video.toString() !== videoId)) || null
+    return res 
+    .status(200)
+    .json(
+        new ApiResponse(200, updatedPlaylist, "Successfully deleted Video from playlist")
+    )
+})
 
 
-export {addVideoToPlaylist, createPlaylist, getPlaylistById, updatePlaylist}
+
+export {addVideoToPlaylist, createPlaylist, getPlaylistById, updatePlaylist, deletePlaylist, removeVideoFromPlaylist}
