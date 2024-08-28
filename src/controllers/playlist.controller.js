@@ -202,6 +202,52 @@ const removeVideoFromPlaylist = asyncHandler(async(req, res)=>{
     )
 })
 
+const getUserPlaylists = asyncHandler(async(req, res)=>{
+    const {userId} = req.params
+    if(!isValidObjectId(userId)){
+        throw new ApiError(400, "Invalid UserId")
+    }
+    const playLists = await Playlist.aggregate([
+        {
+            $match:{
+                owner: new mongoose.Types.ObjectId(userId)
+            }
+        },
+        {
+            $lookup:{
+                from:"videos",
+                localField:"videos",
+                foreignField:"_id",
+                as:"videos",
+                pipeline:[
+                    {
+                        $project:{
+                            _id:0,
+                            thumbnail:1
+                        }
+                    },
+                    
+                ]
+            }
+        },
+        {
+            $addFields:{
+                videosCount: {
+                    $cond:{
+                        if: {$isArray: "$videos"},
+                        then: {$size: "$videos"},
+                        else: 0
+                    }
+                }
+            }
+        },
 
+    ])
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(200, playLists, "Successfully fetched playlists")
+    )
+})
 
-export {addVideoToPlaylist, createPlaylist, getPlaylistById, updatePlaylist, deletePlaylist, removeVideoFromPlaylist}
+export {addVideoToPlaylist, createPlaylist, getPlaylistById, updatePlaylist, deletePlaylist, removeVideoFromPlaylist, getUserPlaylists}
