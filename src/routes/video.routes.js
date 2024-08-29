@@ -1,6 +1,6 @@
 import {Router} from "express"
 import { upload } from "../middlewares/multer.middleware.js"
-import { deleteVideo, getVideoById, publishAVideo, updateVideo } from "../controllers/video.controller.js"
+import { deleteVideo, getAllVideos, getVideoById, publishAVideo, updateVideo } from "../controllers/video.controller.js"
 import { verifyJWT } from "../middlewares/auth.middleware.js"
 
 const router = Router()
@@ -8,7 +8,7 @@ const router = Router()
 // general routes
 router.route("/video/:videoId").get(getVideoById)
 
-
+router.route("/").get(getAllVideos)
 
 // secure routes
 

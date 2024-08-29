@@ -4,9 +4,40 @@ import { deleteImageFromCloudinary, uploadOnCloudinary, deleteVideoFromCloudinar
 
 import {Video} from "../models/video.model.js"
 import { ApiResponse } from "../utils/apiResponse.js";
+import mongoose from "mongoose";
 
 const getAllVideos = asyncHandler(async(req, res)=>{
-
+    const {page=0, limit=10, query, sortBy, sortType, userId} = req.query
+    const videos = await Video.aggregate([
+        {
+            $match:{
+                owner: new mongoose.Types.ObjectId(userId)
+            }
+        },
+        {
+            $lookup:{
+                from:"users",
+                localField:"owner",
+                foreignField:"_id",
+                as:"owner",
+                pipeline:[
+                    {
+                        $project:{
+                            fullName:1,
+                            _id:0,
+                            avatar:1,
+                        }
+                    }
+                ]
+            }
+        },
+        
+    ]).sort(`${sortType === "dsc" ? "-" : "" }${sortBy}`).skip(parseInt(page) * parseInt(limit)).limit(parseInt(limit))
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(200, videos, "Successfully Fetched videos")
+    )
 })
 
 const publishAVideo  = asyncHandler(async(req, res)=>{
